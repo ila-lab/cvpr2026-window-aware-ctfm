@@ -75,7 +75,7 @@ The code was developed in a Python and PyTorch environment with GPU support.
 
 Recommended environment:
 
-- Python >= 3.9
+- Python==3.13.11
 - PyTorch with CUDA support
 - MONAI
 - SimpleITK
