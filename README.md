@@ -87,8 +87,6 @@ Recommended environment:
 **Before install requirement.txt. We recommend install torch first.**
 
 torch==2.12.0+cu130
-torchvision==0.27.0+cu130
-
 Then install dependencies with:
 
 ```bash
@@ -98,8 +96,6 @@ pip install -r requirements.txt
 Example `requirements.txt`:
 
 ```
-torch==2.12.0+cu130
-torchvision==0.27.0+cu130
 numpy==2.4.4
 pandas==3.0.2
 scipy==1.17.1
