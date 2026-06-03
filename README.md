@@ -235,7 +235,7 @@ The coreset was selected using an anatomy-aware and dataset-balanced sampling st
 
 The sampling pipeline used in our previous preparation is available here:
 
-Anatomy-aware coreset sampling pipeline
+[Anatomy-aware coreset sampling pipeline](https://github.com/Laylacheng/CVPR-2026-Foundation-Models-for-General-CT-Image-Diagnosis/tree/main/dataset10%25_2)
 
 The pipeline includes:
 
