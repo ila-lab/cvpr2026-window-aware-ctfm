@@ -423,6 +423,7 @@ value: extracted feature embedding
 ## 9. Linear Probing and Inference
 
 This repository provides the DenseNet121 3D pretraining and feature extraction pipeline.
+
 After extracting `.h5` feature embeddings, downstream linear probing and inference are performed using the official CVPR26 3D CTFM competition scripts.
 
 The official linear probing and inference scripts are available from:
@@ -435,7 +436,7 @@ The required external scripts are:
 * `cvpr26_inference_LP.py`
 
 Please clone or download the official repository first, and make sure these scripts are available in your working directory.
-Alternatively, update the script paths in the provided shell scripts according to your local environment.
+Alternatively, update the script paths in the example shell scripts according to your local environment.
 
 ---
 
@@ -470,18 +471,28 @@ These `.h5` files are used as input features for the official linear probing scr
 
 ---
 
-### 9.2 Linear Probing Training
+### 9.2 Example Shell Scripts
 
-We provide a shell script to run linear probing for all AMOS classification targets:
+This repository provides example shell scripts for connecting the extracted DenseNet121 feature embeddings to the official linear probing pipeline.
+
+The example scripts are located in:
 
 ```text
-scripts/run_lp_densenet_all.sh
+examples/
+├── run_lp_densenet_all.sh
+└── run_inference_lp_densenet_all.sh
 ```
+
+These scripts are examples and may need path modification before running.
+
+---
+
+### 9.3 Linear Probing Training
 
 Run:
 
 ```bash
-bash scripts/run_lp_densenet_all.sh
+bash examples/run_lp_densenet_all.sh
 ```
 
 This script loops over the AMOS downstream classification targets and calls the official `run_LP.py` script for each target.
@@ -512,18 +523,12 @@ python /path/to/CVPR26-3DCTFMCompetition/run_LP.py \
 
 ---
 
-### 9.3 Linear Probing Inference
+### 9.4 Linear Probing Inference
 
 After linear probing checkpoints are generated, inference can be performed with:
 
-```text
-scripts/run_inference_lp_densenet_all.sh
-```
-
-Run:
-
 ```bash
-bash scripts/run_inference_lp_densenet_all.sh
+bash examples/run_inference_lp_densenet_all.sh
 ```
 
 This script loops over the same downstream targets and calls the official `cvpr26_inference_LP.py` script.
@@ -557,9 +562,9 @@ python /path/to/CVPR26-3DCTFMCompetition/cvpr26_inference_LP.py \
 
 ---
 
-### 9.4 AMOS Classification Targets
+### 9.5 AMOS Classification Targets
 
-The provided shell scripts run linear probing and inference for the following AMOS classification targets:
+The provided example shell scripts run linear probing and inference for the following AMOS classification targets:
 
 ```text
 adrenal_hyperplasia
@@ -581,9 +586,9 @@ splenomegaly
 
 ---
 
-### 9.5 Notes
+### 9.6 Notes
 
-The shell scripts in this repository are provided as examples for running linear probing and inference with DenseNet121 feature embeddings.
+The shell scripts in `examples/` are provided as examples for running linear probing and inference with DenseNet121 feature embeddings.
 
 Before running them, please check and update:
 
@@ -594,7 +599,8 @@ Before running them, please check and update:
 * the checkpoint folder for inference
 
 This repository does not modify the official linear probing implementation.
-It only provides DenseNet121 feature extraction and example shell scripts for connecting the extracted features to the official LP pipeline.
+It provides DenseNet121 pretraining, feature extraction, and example scripts for connecting the extracted features to the official LP pipeline.
+
 
 
 # 10. Results
