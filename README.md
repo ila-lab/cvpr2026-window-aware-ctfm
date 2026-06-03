@@ -84,6 +84,8 @@ Recommended environment:
 - h5py
 - tqdm
 
+Before install requirement.txt. We recommend install torch first.
+
 Install dependencies with:
 
 ```bash
