@@ -100,9 +100,10 @@ Install PyTorch first:
 
 ```bash
 pip install torch==2.12.0+cu130 --extra-index-url https://download.pytorch.org/whl/cu130
-
+```
 The PyTorch packages are pinned with the `+cu130` suffix to avoid installing a different CUDA build when package versions are updated.
-
+Then:
+```bash
 pip install -r requirements.txt
 ```
 
