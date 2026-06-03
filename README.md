@@ -83,7 +83,7 @@ The code was developed in a Python and PyTorch environment with GPU support.
 
 **Recommended environment:**
 
-- Python >= 3.10
+- Python >= 3.10 (tested with Python 3.13)
 - PyTorch 2.12.0 with CUDA 13.0
 - torchvision 0.27.0 with CUDA 13.0
 - MONAI 1.5.2
