@@ -1,3 +1,5 @@
+# CVPR 2026 Team `ilalab` Solution
+
 This repository provides the implementation of our solution for the **CVPR 2026 Foundation Models for General CT Image Diagnosis Challenge**.
 
 - **Task:** Task 1 — Linear Probing
