@@ -102,7 +102,7 @@ The code was developed in a Python and PyTorch environment with GPU support.
 Install PyTorch first:
 
 ```bash
-pip install torch==2.12.0+cu130 torchvision==0.27.0+cu130 --extra-index-url https://download.pytorch.org/whl/cu130
+pip install torch==2.12.0+cu130 --extra-index-url https://download.pytorch.org/whl/cu130
 
 The PyTorch packages are pinned with the `+cu130` suffix to avoid installing a different CUDA build when package versions are updated.
 
