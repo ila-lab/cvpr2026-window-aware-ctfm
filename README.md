@@ -80,6 +80,8 @@ cvpr2026-window-aware-ctfm/
 
 ## 3. Environment
 
+## 3. Environment
+
 The code was developed in a Python and PyTorch environment with GPU support.
 
 **Recommended environment:**
@@ -97,13 +99,16 @@ The code was developed in a Python and PyTorch environment with GPU support.
 - PyYAML 6.0.3
 - scikit-learn 1.8.0
 
-Install dependencies with:
+Install PyTorch first:
+
+```bash
+pip install torch==2.12.0+cu130 torchvision==0.27.0+cu130 --extra-index-url https://download.pytorch.org/whl/cu130
+
+The PyTorch packages are pinned with the `+cu130` suffix to avoid installing a different CUDA build when package versions are updated.
 
 ```bash
 pip install -r requirements.txt
 ```
-
-The PyTorch packages are pinned with the `+cu130` suffix to avoid installing a different CUDA build when package versions are updated.
 
 ---
 
