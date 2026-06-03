@@ -77,9 +77,6 @@ cvpr2026-window-aware-ctfm/
 | `.gitignore` | Files and folders excluded from Git tracking |
 
 ---
-
-## 3. Environment
-
 ## 3. Environment
 
 The code was developed in a Python and PyTorch environment with GPU support.
