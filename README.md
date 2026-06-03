@@ -170,7 +170,7 @@ python -m scripts.extract_feat_LP_densenet \
 For ROI-based feature extraction with foreground masks, use:
 
 ```bash
-python scripts/extract_feat_LP_densenet.py \
+python -m scripts/extract_feat_LP_densenet.py \
   --input /path/to/AMOS-clf-tr-val/images \
   --masks_path /path/to/AMOS-clf-tr-val/fg_masks \
   --output ./outputs/features/AMOS_ROI \
