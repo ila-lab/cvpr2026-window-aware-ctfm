@@ -108,9 +108,215 @@ pip install -r requirements.txt
 
 ---
 
-## 4. Dataset Structure
+## 4. Coreset Preparation
 
-### 4.1 Coreset Data for Self-supervised Pretraining
+In the Coreset Track, only **10%** of the pretraining data can be used.
+
+This repository assumes that the coreset has already been prepared. The pretraining script does not perform coreset selection automatically — it directly loads CT volumes from the folder specified by `--data_root`.
+
+In our experiment, the final coreset contained **1082 CT volumes** and was organized under `coreset_data2/images/`.
+
+The coreset was selected using an **anatomy-aware and dataset-balanced sampling strategy**. The CT volumes were grouped by anatomical region and dataset source. The main anatomy groups included:
+
+- Abdomen / Pelvis
+- Chest
+- Head
+- PET / Whole-body
+- Others
+
+The sampling pipeline used in our previous data preparation is available here: **Anatomy-aware coreset sampling pipeline**
+
+The pipeline includes:
+
+```
+count_groups.py
+    ↓
+pretty_counts.txt
+    ↓
+build_file_list.py
+    ↓
+all_files.txt
+    ↓
+sampling.py
+    ↓
+coreset_1082_equal_dataset.txt
+```
+
+The final sampling target was:
+
+```python
+ANATOMY_TARGETS = {
+    "Abdomen": 532,
+    "Chest":   250,
+    "Head":    100,
+    "PET":     100,
+    "Others":  100,
+}
+```
+
+This design was used to preserve data diversity and reduce the risk of the coreset being dominated by a small number of large datasets.
+
+---
+
+## 5. Preprocessing
+
+### 5.1 Pretraining Stage
+
+For each CT volume, the preprocessing pipeline includes:
+
+1. Read the CT volume using SimpleITK
+2. Resample the image to 1.0 × 1.0 × 1.0 mm spacing
+3. Center crop or pad the volume to 152 × 152 × 152
+4. Apply window-aware augmentation
+5. Generate global and local views
+
+> No z-score normalization is used in this version.
+> 
+
+### 5.2 Window-aware Augmentation
+
+CT images are represented by Hounsfield Unit (HU) values. Different HU windows highlight different tissues and lesions. Therefore, different CT windows are randomly applied during pretraining.
+
+| Window | Center | Width |
+| --- | --- | --- |
+| Soft tissue | 50 | 380 |
+| Lung | -600 | 1550 |
+| Bone | 450 | 1900 |
+| Abdomen | 50 | 380 |
+| Wide | 450 | 2100 |
+
+**Additional augmentations include:**
+
+- Intensity jitter
+- Gaussian noise
+- Random rotation
+
+> No flipping is used.
+> 
+
+---
+
+## 6. Self-supervised Pretraining
+
+Run pretraining with:
+
+```bash
+python -m scripts.pretrain_densenet121 \
+  --data_root /path/to/coreset_data2/images \
+  --save_dir ./outputs/pretrain_densenet121
+```
+
+If no additional training arguments are specified, the script uses the default full pretraining setting.
+
+| Parameter | Value |
+| --- | --- |
+| Backbone | DenseNet121 3D |
+| Input size | 152 × 152 × 152 |
+| Local patch sizes | 48, 80, 104 |
+| Number of global views | 2 |
+| Number of local views | 3 |
+| Epochs | 80 |
+| Batch size | 3 |
+| Gradient accumulation steps | 5 |
+| Effective batch size | 15 |
+| Learning rate | 3e-4 |
+| Weight decay | 1e-4 |
+| Temperature | 0.2 |
+| Dropout | 0.2 |
+
+For a quick sanity check, use:
+
+```bash
+python -m scripts.pretrain_densenet121 \
+  --data_root /path/to/coreset_data2/images \
+  --save_dir ./outputs/test_pretrain \
+  --epochs 1 \
+  --batch_size 1 \
+  --num_workers 0
+```
+
+The script saves:
+
+```
+outputs/pretrain_densenet121/
+├── latest_full_model.pth
+├── latest_encoder_only.pth
+├── best_full_model.pth
+├── best_encoder_only.pth
+└── training_history.csv
+```
+
+For linear probing feature extraction, use: `best_encoder_only.pth`
+
+---
+
+## 7. Feature Extraction for Linear Probing
+
+After pretraining, the DenseNet121 3D encoder is used to extract CT feature embeddings for downstream linear probing.
+
+The feature extraction script supports two modes:
+
+- **Image-only mode**: use the whole CT volume.
+- **ROI-based mode**: use a foreground mask to crop the region of interest before feature extraction.
+
+### 7.1 Image-only Feature Extraction
+
+```bash
+python -m scripts.extract_feat_LP_densenet \
+  --input /path/to/images \
+  --output ./outputs/features \
+  --checkpoint ./outputs/pretrain_densenet121/best_encoder_only.pth
+```
+
+### 7.2 ROI-based Feature Extraction with Masks
+
+```bash
+python -m scripts.extract_feat_LP_densenet \
+  --input /path/to/images \
+  --masks_path /path/to/masks \
+  --output ./outputs/features_roi \
+  --checkpoint ./outputs/pretrain_densenet121/best_encoder_only.pth
+```
+
+The mask filenames should match the image filenames.
+
+### 7.3 Feature Extraction Preprocessing
+
+The feature extraction pipeline includes:
+
+1. Read 3D CT images using SimpleITK
+2. Apply soft-tissue CT window
+3. Resample to 1.0 × 1.0 × 1.0 mm spacing
+4. Crop or pad to 152 × 152 × 152
+5. If a mask is available, crop the ROI based on the foreground center
+6. Extract multi-level DenseNet features
+7. Apply adaptive average pooling
+8. Concatenate pooled features into the final embedding
+
+The default soft-tissue window is:
+
+| Window | Center | Width | HU range |
+| --- | --- | --- | --- |
+| Soft tissue | 50 | 380 | -140 to 240 |
+
+Each CT scan is saved as one `.h5` file:
+
+```
+outputs/features/
+├── case001.h5
+├── case002.h5
+└── ...
+```
+
+Each `.h5` file contains:
+
+- **key**: `y_hat`
+- **value**: extracted feature embedding
+
+---
+## 8. Execute workflow
+
+### 8.1 Coreset Data for Self-supervised Pretraining
 
 For self-supervised pretraining, the input data should contain CT volumes in `.nii.gz` format.
 
@@ -135,7 +341,7 @@ python -m scripts.pretrain_densenet121 \
 
 The pretraining script searches for `.nii.gz` files under the specified `--data_root`.
 
-### 4.2 Downstream Data for Feature Extraction
+### 8.2 Downstream Data for Feature Extraction
 
 For downstream linear probing, this repository provides a feature extraction script. The script does not train the downstream classifier — it only extracts `.h5` feature files from CT volumes.
 
@@ -208,213 +414,6 @@ python -m scripts.extract_feat_LP_densenet \
 ```
 
 COVID-CT and LUNA25 are image-only tasks in this pipeline, so `--masks_path` is not required.
-
----
-
-## 5. Coreset Preparation
-
-In the Coreset Track, only **10%** of the pretraining data can be used.
-
-This repository assumes that the coreset has already been prepared. The pretraining script does not perform coreset selection automatically — it directly loads CT volumes from the folder specified by `--data_root`.
-
-In our experiment, the final coreset contained **1082 CT volumes** and was organized under `coreset_data2/images/`.
-
-The coreset was selected using an **anatomy-aware and dataset-balanced sampling strategy**. The CT volumes were grouped by anatomical region and dataset source. The main anatomy groups included:
-
-- Abdomen / Pelvis
-- Chest
-- Head
-- PET / Whole-body
-- Others
-
-The sampling pipeline used in our previous data preparation is available here: **Anatomy-aware coreset sampling pipeline**
-
-The pipeline includes:
-
-```
-count_groups.py
-    ↓
-pretty_counts.txt
-    ↓
-build_file_list.py
-    ↓
-all_files.txt
-    ↓
-sampling.py
-    ↓
-coreset_1082_equal_dataset.txt
-```
-
-The final sampling target was:
-
-```python
-ANATOMY_TARGETS = {
-    "Abdomen": 532,
-    "Chest":   250,
-    "Head":    100,
-    "PET":     100,
-    "Others":  100,
-}
-```
-
-This design was used to preserve data diversity and reduce the risk of the coreset being dominated by a small number of large datasets.
-
----
-
-## 6. Preprocessing
-
-### 6.1 Pretraining Stage
-
-For each CT volume, the preprocessing pipeline includes:
-
-1. Read the CT volume using SimpleITK
-2. Resample the image to 1.0 × 1.0 × 1.0 mm spacing
-3. Center crop or pad the volume to 152 × 152 × 152
-4. Apply window-aware augmentation
-5. Generate global and local views
-
-> No z-score normalization is used in this version.
-> 
-
-### 6.2 Window-aware Augmentation
-
-CT images are represented by Hounsfield Unit (HU) values. Different HU windows highlight different tissues and lesions. Therefore, different CT windows are randomly applied during pretraining.
-
-| Window | Center | Width |
-| --- | --- | --- |
-| Soft tissue | 50 | 380 |
-| Lung | -600 | 1550 |
-| Bone | 450 | 1900 |
-| Abdomen | 50 | 380 |
-| Wide | 450 | 2100 |
-
-**Additional augmentations include:**
-
-- Intensity jitter
-- Gaussian noise
-- Random rotation
-
-> No flipping is used.
-> 
-
----
-
-## 7. Self-supervised Pretraining
-
-Run pretraining with:
-
-```bash
-python -m scripts.pretrain_densenet121 \
-  --data_root /path/to/coreset_data2/images \
-  --save_dir ./outputs/pretrain_densenet121
-```
-
-If no additional training arguments are specified, the script uses the default full pretraining setting.
-
-| Parameter | Value |
-| --- | --- |
-| Backbone | DenseNet121 3D |
-| Input size | 152 × 152 × 152 |
-| Local patch sizes | 48, 80, 104 |
-| Number of global views | 2 |
-| Number of local views | 3 |
-| Epochs | 80 |
-| Batch size | 3 |
-| Gradient accumulation steps | 5 |
-| Effective batch size | 15 |
-| Learning rate | 3e-4 |
-| Weight decay | 1e-4 |
-| Temperature | 0.2 |
-| Dropout | 0.2 |
-
-For a quick sanity check, use:
-
-```bash
-python -m scripts.pretrain_densenet121 \
-  --data_root /path/to/coreset_data2/images \
-  --save_dir ./outputs/test_pretrain \
-  --epochs 1 \
-  --batch_size 1 \
-  --num_workers 0
-```
-
-The script saves:
-
-```
-outputs/pretrain_densenet121/
-├── latest_full_model.pth
-├── latest_encoder_only.pth
-├── best_full_model.pth
-├── best_encoder_only.pth
-└── training_history.csv
-```
-
-For linear probing feature extraction, use: `best_encoder_only.pth`
-
----
-
-## 8. Feature Extraction for Linear Probing
-
-After pretraining, the DenseNet121 3D encoder is used to extract CT feature embeddings for downstream linear probing.
-
-The feature extraction script supports two modes:
-
-- **Image-only mode**: use the whole CT volume.
-- **ROI-based mode**: use a foreground mask to crop the region of interest before feature extraction.
-
-### 8.1 Image-only Feature Extraction
-
-```bash
-python -m scripts.extract_feat_LP_densenet \
-  --input /path/to/images \
-  --output ./outputs/features \
-  --checkpoint ./outputs/pretrain_densenet121/best_encoder_only.pth
-```
-
-### 8.2 ROI-based Feature Extraction with Masks
-
-```bash
-python -m scripts.extract_feat_LP_densenet \
-  --input /path/to/images \
-  --masks_path /path/to/masks \
-  --output ./outputs/features_roi \
-  --checkpoint ./outputs/pretrain_densenet121/best_encoder_only.pth
-```
-
-The mask filenames should match the image filenames.
-
-### 8.3 Feature Extraction Preprocessing
-
-The feature extraction pipeline includes:
-
-1. Read 3D CT images using SimpleITK
-2. Apply soft-tissue CT window
-3. Resample to 1.0 × 1.0 × 1.0 mm spacing
-4. Crop or pad to 152 × 152 × 152
-5. If a mask is available, crop the ROI based on the foreground center
-6. Extract multi-level DenseNet features
-7. Apply adaptive average pooling
-8. Concatenate pooled features into the final embedding
-
-The default soft-tissue window is:
-
-| Window | Center | Width | HU range |
-| --- | --- | --- | --- |
-| Soft tissue | 50 | 380 | -140 to 240 |
-
-Each CT scan is saved as one `.h5` file:
-
-```
-outputs/features/
-├── case001.h5
-├── case002.h5
-└── ...
-```
-
-Each `.h5` file contains:
-
-- **key**: `y_hat`
-- **value**: extracted feature embedding
 
 ---
 
