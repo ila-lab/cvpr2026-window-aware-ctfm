@@ -85,6 +85,10 @@ Recommended environment:
 - tqdm
 
 **Before install requirement.txt. We recommend install torch first.**
+
+torch==2.12.0+cu130
+torchvision==0.27.0+cu130
+
 Then install dependencies with:
 
 ```bash
