@@ -86,7 +86,8 @@ Recommended environment:
 
 **Before install requirement.txt. We recommend install torch first.**
 
-torch==2.12.0+cu130
+pip install torch==2.12.0 torchvision==0.27.0 --index-url https://download.pytorch.org/whl/cu130
+
 Then install dependencies with:
 
 ```bash
