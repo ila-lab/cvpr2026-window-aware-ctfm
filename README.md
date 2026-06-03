@@ -420,8 +420,184 @@ value: extracted feature embedding
 ```
 
 ---
+## 9. Linear Probing and Inference
 
-# 9. Results
+This repository provides the DenseNet121 3D pretraining and feature extraction pipeline.
+After extracting `.h5` feature embeddings, downstream linear probing and inference are performed using the official CVPR26 3D CTFM competition scripts.
+
+The official linear probing and inference scripts are available from:
+
+https://github.com/kmin940/CVPR26-3DCTFMCompetition
+
+The required external scripts are:
+
+* `run_LP.py`
+* `cvpr26_inference_LP.py`
+
+Please clone or download the official repository first, and make sure these scripts are available in your working directory.
+Alternatively, update the script paths in the provided shell scripts according to your local environment.
+
+---
+
+### 9.1 Input Features
+
+Before running linear probing, CT feature embeddings should be extracted using:
+
+```bash
+python scripts/extract_feat_LP_densenet.py \
+  --input /path/to/images \
+  --output ./outputs/features \
+  --checkpoint ./outputs/pretrain_densenet121/best_encoder_only.pth
+```
+
+The output folder should contain one `.h5` file for each CT scan:
+
+```text
+outputs/features/
+├── case001.h5
+├── case002.h5
+├── case003.h5
+└── ...
+```
+
+Each `.h5` file contains the extracted embedding under the key:
+
+```text
+y_hat
+```
+
+These `.h5` files are used as input features for the official linear probing script.
+
+---
+
+### 9.2 Linear Probing Training
+
+We provide a shell script to run linear probing for all AMOS classification targets:
+
+```text
+scripts/run_lp_densenet_all.sh
+```
+
+Run:
+
+```bash
+bash scripts/run_lp_densenet_all.sh
+```
+
+This script loops over the AMOS downstream classification targets and calls the official `run_LP.py` script for each target.
+
+The main paths used in the script are:
+
+```bash
+EMBEDS_ROOT="/path/to/densenet_lp_features"
+LABELS_ROOT="/path/to/AMOS-clf-tr-val/labels"
+OUT_ROOT="/path/to/densenet_lp_results"
+```
+
+where:
+
+* `EMBEDS_ROOT` is the folder containing the extracted `.h5` feature files.
+* `LABELS_ROOT` is the folder containing the downstream classification labels.
+* `OUT_ROOT` is the output folder for linear probing results and checkpoints.
+
+Example command inside the script:
+
+```bash
+python /path/to/CVPR26-3DCTFMCompetition/run_LP.py \
+  --embeds_root "$EMBEDS_ROOT" \
+  --labels_root "$LABELS_ROOT" \
+  --target "$target" \
+  --out_dir "$OUT_ROOT/$target/results"
+```
+
+---
+
+### 9.3 Linear Probing Inference
+
+After linear probing checkpoints are generated, inference can be performed with:
+
+```text
+scripts/run_inference_lp_densenet_all.sh
+```
+
+Run:
+
+```bash
+bash scripts/run_inference_lp_densenet_all.sh
+```
+
+This script loops over the same downstream targets and calls the official `cvpr26_inference_LP.py` script.
+
+The main paths used in the script are:
+
+```bash
+EMBEDS_ROOT="/path/to/densenet_lp_features"
+LABELS_ROOT="/path/to/AMOS-clf-tr-val/labels"
+RESULTS_ROOT="/path/to/densenet_lp_results"
+```
+
+where:
+
+* `EMBEDS_ROOT` is the folder containing extracted DenseNet121 feature embeddings.
+* `LABELS_ROOT` is the folder containing task labels.
+* `RESULTS_ROOT` is the folder containing trained linear probing checkpoints.
+
+Example command inside the script:
+
+```bash
+python /path/to/CVPR26-3DCTFMCompetition/cvpr26_inference_LP.py \
+  --embeds_root "$EMBEDS_ROOT" \
+  --labels_root "$LABELS_ROOT" \
+  --target "$target" \
+  --split val \
+  --ckpt_dir "$RESULTS_ROOT/$target/results" \
+  --batch_size 256 \
+  --num_workers 4
+```
+
+---
+
+### 9.4 AMOS Classification Targets
+
+The provided shell scripts run linear probing and inference for the following AMOS classification targets:
+
+```text
+adrenal_hyperplasia
+ascites
+atherosclerosis
+cholecystitis
+colorectal_cancer
+fatty_liver
+gallstone
+hydronephrosis
+kidney_stone
+liver_calcifications
+liver_cyst
+liver_lesion
+lymphadenopathy
+renal_cyst
+splenomegaly
+```
+
+---
+
+### 9.5 Notes
+
+The shell scripts in this repository are provided as examples for running linear probing and inference with DenseNet121 feature embeddings.
+
+Before running them, please check and update:
+
+* the path to the official CVPR26 3D CTFM repository
+* the extracted feature folder
+* the label folder
+* the output result folder
+* the checkpoint folder for inference
+
+This repository does not modify the official linear probing implementation.
+It only provides DenseNet121 feature extraction and example shell scripts for connecting the extracted features to the official LP pipeline.
+
+
+# 10. Results
 
 The final model reported in our presentation is the DenseNet121 3D model without z-score normalization.
 
@@ -450,7 +626,7 @@ The model showed stronger performance on abdominal and soft-tissue-related tasks
 
 ---
 
-# 10. Reproducibility Workflow
+# 11. Reproducibility Workflow
 
 A typical workflow is:
 
@@ -474,7 +650,7 @@ The extracted `.h5` files can then be used as input features for downstream line
 
 ---
 
-# 11. Limitations
+# 12. Limitations
 
 This repository provides the main pretraining and feature extraction pipeline. There are several limitations in the current version:
 
@@ -485,7 +661,7 @@ This repository provides the main pretraining and feature extraction pipeline. T
 
 ---
 
-# 12. Future Work
+# 13. Future Work
 
 Potential improvements include:
 
@@ -497,7 +673,7 @@ Potential improvements include:
 
 ---
 
-# 13. Acknowledgement
+# 14. Acknowledgement
 
 We thank the organizers of the CVPR 2026 Foundation Models for General CT Image Diagnosis Challenge for providing the benchmark and evaluation platform.
 
@@ -505,7 +681,7 @@ We also thank our team members and advisors for their support throughout the dev
 
 ---
 
-# 14. Contact
+# 15. Contact
 
 **CHENG, JU YUN**
 
