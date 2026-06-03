@@ -132,7 +132,7 @@ coreset_data2/
 The `--data_root` argument should point to the folder that contains the CT volumes:
 
 ```bash
-python scripts/pretrain_densenet121.py \
+python -m scripts.pretrain_densenet121 \
   --data_root /path/to/coreset_data2/images \
   --save_dir ./outputs/pretrain_densenet121
 ```
@@ -161,9 +161,9 @@ AMOS-clf-tr-val/
 For image-only feature extraction, use:
 
 ```bash
-python scripts/extract_feat_LP_densenet.py \
-  --input /path/to/AMOS-clf-tr-val/images \
-  --output ./outputs/features/AMOS \
+python -m scripts.extract_feat_LP_densenet \
+  --input /path/to/images \
+  --output ./outputs/features \
   --checkpoint ./outputs/pretrain_densenet121/best_encoder_only.pth
 ```
 
